@@ -42,6 +42,4 @@ This bot connects via multiple HTTP proxies to farm Nodepay using a multi accoun
 5. Set the proxy format to `protocol://username:password@hostname:port`
 6. Choose any number for the proxy count, and paste the proxies into `proxy.txt`.
 
-## Donations
-- **PayPal**: [Paypal.me/IPJAP](https://www.paypal.com/paypalme/IPJAP)
-- **Trakteer**: [Trakteer.id/officialputuid](https://trakteer.id/officialputuid) (ID)
+
