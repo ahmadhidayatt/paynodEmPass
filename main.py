@@ -22,41 +22,41 @@ logger.add(
 def print_header():
     cn = pyfiglet.figlet_format("xNodepayBot")
     print(cn)
-    print("🌱 Season 2")
-    print("🎨 by \033]8;;https://github.com/officialputuid\033\\officialputuid\033]8;;\033\\")
+    print("🌟 Season 2")
+    print("🔗 by \033]8;;https://github.com/officialputuid\033\\officialputuid\033]8;;\033\\")
     print("✨ Credits: IDWR2016, im-hanzou, AirdropFamilyIDN")
-    print('🎁 \033]8;;https://paypal.me/IPJAP\033\\Paypal.me/IPJAP\033]8;;\033\\ — \033]8;;https://trakteer.id/officialputuid\033\\Trakteer.id/officialputuid\033]8;;\033\\')
+    print('💰 \033]8;;https://paypal.me/IPJAP\033\\Paypal.me/IPJAP\033]8;;\033\\ — \033]8;;https://trakteer.id/officialputuid\033\\Trakteer.id/officialputuid\033]8;;\033\\')
 
 # Initialize the header
 print_header()
 
-# Read Tokens and Proxy count
-def read_tokens_and_proxy():
-    with open('tokens.txt', 'r') as file:
-        tokens_content = sum(1 for line in file)
+# Read Credentials and Proxy count
+def read_credentials_and_proxy():
+    with open('credentials.txt', 'r') as file:
+        credentials_content = sum(1 for line in file)
 
     with open('proxy.txt', 'r') as file:
         proxy_count = sum(1 for line in file)
 
-    return tokens_content, proxy_count
+    return credentials_content, proxy_count
 
-tokens_content, proxy_count = read_tokens_and_proxy()
+credentials_content, proxy_count = read_credentials_and_proxy()
 
 print()
-print(f"🔑 Tokens: {tokens_content}.")
+print(f"🔑 Credentials: {credentials_content}.")
 print(f"🌐 Loaded {proxy_count} proxies.")
-print(f"🧩 Nodepay limits only 3 connections per account.")
+print(f"🔒 Nodepay limits only 3 connections per account.")
 print()
 
 # Constants
 PING_INTERVAL = 60
 RETRIES_LIMIT = 60
-PROXIES_PER_TOKEN = 5
+PROXIES_PER_CREDENTIAL = 5
 
 # API Endpoints
 DOMAIN_API_ENDPOINTS = {
-    "SESSION": [
-        "https://api.nodepay.ai/api/auth/session"
+    "LOGIN": [
+        "https://api.nodepay.ai/api/auth/login"
     ],
     "PING": [
         "https://nw.nodepay.ai/api/network/ping"
@@ -74,9 +74,6 @@ browser_id = None
 account_info = {}
 last_ping_time = {}
 
-def truncate_token(token):
-    return f"{token[:4]}--{token[-4:]}"
-
 def truncate_proxy(proxy):
     return f"{proxy[:6]}--{proxy[-10:]}"
 
@@ -88,7 +85,7 @@ def validate_response(response):
         raise ValueError("Invalid response received from the server.")
     return response
 
-async def initialize_profile(proxy, token):
+async def initialize_profile(proxy, username, password):
     global browser_id, account_info
     await asyncio.sleep(random.uniform(1.0, 3.0))
     try:
@@ -96,18 +93,22 @@ async def initialize_profile(proxy, token):
 
         if not session_info:
             browser_id = generate_uuid()
-            response = await send_request(DOMAIN_API_ENDPOINTS["SESSION"][0], {}, proxy, token)
+            payload = {
+                "username": username,
+                "password": password
+            }
+            response = await send_request(DOMAIN_API_ENDPOINTS["LOGIN"][0], payload, proxy)
             validate_response(response)
             account_info = response["data"]
 
             if account_info.get("uid"):
                 save_session_info(proxy, account_info)
-                await start_ping_loop(proxy, token)
+                await start_ping_loop(proxy, username, password)
             else:
                 handle_logout(proxy)
         else:
             account_info = session_info
-            await start_ping_loop(proxy, token)
+            await start_ping_loop(proxy, username, password)
     except Exception as e:
         error_message = str(e)
         if "keepalive ping timeout" in error_message or "500 Internal Server Error" in error_message:
@@ -116,11 +117,10 @@ async def initialize_profile(proxy, token):
             logger.error(f"Error: {error_message}")
             return proxy
 
-async def send_request(url, payload, proxy, token):
+async def send_request(url, payload, proxy):
     headers = {
-        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
-        "User-Agent": UserAgent().random,
+        "User -Agent": UserAgent().random,
         "Accept": "application/json",
         "Accept-Language": "en-US,en;q=0.5",
         "Referer": "https://app.nodepay.ai",
